@@ -318,6 +318,12 @@ func (m *SmolvmMachine) Run(
 	}
 
 	client := NewSmolvmClient(m.ServerURL)
+
+	// Pull the image first (run doesn't auto-pull).
+	if err := client.PullImage(ctx, m.Name, img); err != nil {
+		return "", fmt.Errorf("pull image %q: %w", img, err)
+	}
+
 	resp, err := client.Run(ctx, m.Name, &RunReq{
 		Image:       img,
 		Command:     command,
