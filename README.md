@@ -1,6 +1,6 @@
 # smolvm Dagger Module
 
-A [Dagger](https://dagger.io) module that provides **microVM-based sandboxed execution** via smolvm.
+A [Dagger](https://dagger.io) module that provides **microVM-based sandboxed execution** via [smolvm](https://github.com/smol-machines/smolvm).
 
 Unlike Dagger's built-in container execution (runc/namespaces), this module runs workloads in real virtual machines using hardware virtualization (KVM on Linux, Hypervisor.framework on macOS). This provides:
 
@@ -8,81 +8,73 @@ Unlike Dagger's built-in container execution (runc/namespaces), this module runs
 - **Hostname-based egress filtering** — restrict outbound network to specific domains
 - **No privileged containers needed** — smolvm uses the host's hypervisor directly
 
-## Prerequisites
-
-1. **smolvm** installed and the API server running:
-   ```bash
-   smolvm serve start
-   ```
-
-2. **Dagger CLI** installed:
-   ```bash
-   # macOS
-   brew install dagger/tap/dagger
-
-   # or via shell script
-   curl -fsSL https://dl.dagger.io/dagger/install.sh | sh
-   ```
-
-## Setup
-
-Generate the Dagger SDK bindings (one-time):
+## Install
 
 ```bash
-cd examples/dagger-module
-dagger develop
+dagger install github.com/smol-machines/dagger-smolvm
+```
+
+## Prerequisites
+
+[smolvm](https://github.com/smol-machines/smolvm) installed and the API server running:
+
+```bash
+smolvm serve start
 ```
 
 ## Usage
 
-### CLI — One-shot execution
+### One-shot execution
 
 ```bash
 # Run a command in a microVM
-dagger call exec --image python:3.12-alpine --command python,-c,"print('hello from a VM')"
+dagger -m github.com/smol-machines/dagger-smolvm call \
+  exec --image python:3.12-alpine --command python,-c,"print('hello from a VM')"
 
 # Run code directly
-dagger call run-code --code "console.log(2 + 2)" --language node
+dagger -m github.com/smol-machines/dagger-smolvm call \
+  run-code --code "console.log(2 + 2)" --language node
 
 # Check smolvm server connectivity
-dagger call health
+dagger -m github.com/smol-machines/dagger-smolvm call health
 ```
 
-### CLI — With network egress filtering
+### Network egress filtering
 
 ```bash
 # Only allow requests to OpenAI and Anthropic APIs
-dagger call \
+dagger -m github.com/smol-machines/dagger-smolvm call \
   with-egress-filter --hosts api.openai.com,api.anthropic.com \
   exec --image python:3.12-alpine \
        --command python,-c,"import urllib.request; print(urllib.request.urlopen('https://api.openai.com').status)"
 ```
 
-### CLI — Custom resources
+### Custom resources
 
 ```bash
-dagger call \
+dagger -m github.com/smol-machines/dagger-smolvm call \
   with-resources --cpus 4 --memory-mb 2048 \
   exec --image gcc:alpine --command gcc,--version
 ```
 
-### CLI — Persistent machine (multi-step workflow)
+### Persistent machine (multi-step workflow)
 
 ```bash
-# Create a persistent VM
-dagger call machine --name dev --image python:3.12-alpine \
+# Create a persistent VM and install packages
+dagger -m github.com/smol-machines/dagger-smolvm call \
+  machine --name dev --image python:3.12-alpine \
   exec --command pip,install,requests
 
 # Run more commands in the same VM
-dagger call machine --name dev --image python:3.12-alpine \
+dagger -m github.com/smol-machines/dagger-smolvm call \
+  machine --name dev --image python:3.12-alpine \
   exec --command python,-c,"import requests; print(requests.get('https://httpbin.org/get').status_code)"
 ```
 
-### Programmatic — From another Dagger module (Go)
+### From another Dagger module (Go)
 
 ```go
 func (m *MyModule) SecureTest(ctx context.Context, src *dagger.Directory) (string, error) {
-    // Run tests in a VM with restricted network access
     return dag.Smolvm().
         WithEgressFilter([]string{"registry.npmjs.org"}).
         WithResources(2, 1024).
@@ -92,7 +84,7 @@ func (m *MyModule) SecureTest(ctx context.Context, src *dagger.Directory) (strin
 }
 ```
 
-### Programmatic — From another Dagger module (Python)
+### From another Dagger module (Python)
 
 ```python
 @function
@@ -104,17 +96,6 @@ async def secure_test(self, src: dagger.Directory) -> str:
         .exec("node:22-alpine", ["npm", "test"], env=["NODE_ENV=test"])
     )
 ```
-
-## Publishing to the Daggerverse
-
-To make this module available to all Dagger users:
-
-1. Move to its own repository (e.g., `github.com/smolvm/dagger-smolvm`)
-2. Push to GitHub — it automatically appears on [daggerverse.dev](https://daggerverse.dev)
-3. Anyone can install it:
-   ```bash
-   dagger install github.com/smolvm/dagger-smolvm
-   ```
 
 ## Architecture
 
@@ -143,9 +124,7 @@ To make this module available to all Dagger users:
     └─────────────────────┘
 ```
 
-The Dagger module runs inside the Dagger engine container and communicates with the smolvm API server on the host via HTTP. smolvm then creates and manages microVMs using the host's hypervisor.
-
-## Comparison: Container vs microVM execution
+## Container vs microVM execution
 
 | Property | Dagger (containers) | smolvm (microVMs) |
 |---|---|---|
