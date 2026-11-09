@@ -129,6 +129,7 @@ func (s *Smolvm) Exec(
 		MemoryMB:     s.MemoryMB,
 		Network:      s.Network,
 		AllowedCIDRs: s.AllowCIDRs,
+		AllowedHosts: s.AllowHosts,
 	})
 	if err != nil {
 		return "", fmt.Errorf("create VM: %w", err)
@@ -227,6 +228,7 @@ func (s *Smolvm) Machine(
 		MemoryMB:     s.MemoryMB,
 		Network:      s.Network,
 		AllowedCIDRs: s.AllowCIDRs,
+		AllowedHosts: s.AllowHosts,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create machine %q: %w", name, err)
