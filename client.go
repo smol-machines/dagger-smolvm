@@ -39,6 +39,7 @@ type CreateMachineReq struct {
 	StorageGB    *int     `json:"storageGb,omitempty"`
 	OverlayGB    *int     `json:"overlayGb,omitempty"`
 	AllowedCIDRs []string `json:"allowedCidrs,omitempty"`
+	AllowedHosts []string `json:"allowedHosts,omitempty"`
 }
 
 // RunReq runs a command inside an OCI image on a machine.

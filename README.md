@@ -41,6 +41,8 @@ dagger -m github.com/smol-machines/dagger-smolvm call health
 
 ### Network egress filtering
 
+Hostname filtering needs smolvm v1.3.4 or later. Older servers ignore the host list.
+
 ```bash
 # Only allow requests to OpenAI and Anthropic APIs
 dagger -m github.com/smol-machines/dagger-smolvm call \
